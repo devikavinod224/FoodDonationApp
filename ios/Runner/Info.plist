@@ -66,5 +66,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs access to location when open to find nearby food donation shops.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to take photos of food items for donation.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs photo library access to upload photos of food items from your gallery.</string>
 </dict>
 </plist>

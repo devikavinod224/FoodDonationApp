@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../models/profile_details.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import '../../services/permission_service.dart';
 
 class ShopDetailsPage extends StatefulWidget {
   final VoidCallback onBack;
@@ -24,16 +27,68 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
   late TextEditingController _aboutController;
   late TextEditingController _ownerController;
   late TextEditingController _phoneController;
+  File? _imageFile;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
     final details = Provider.of<AppProvider>(context, listen: false).shopDetails;
-    _nameController = TextEditingController(text: details.shopName);
-    _locationController = TextEditingController(text: details.shopLocation);
-    _aboutController = TextEditingController(text: details.aboutShop);
-    _ownerController = TextEditingController(text: details.ownerName);
-    _phoneController = TextEditingController(text: details.phone);
+    if (details != null) {
+      _nameController = TextEditingController(text: details.shopName);
+      _locationController = TextEditingController(text: details.shopLocation);
+      _aboutController = TextEditingController(text: details.aboutShop);
+      _ownerController = TextEditingController(text: details.ownerName);
+      _phoneController = TextEditingController(text: details.phone);
+    } else {
+      _nameController = TextEditingController();
+      _locationController = TextEditingController();
+      _aboutController = TextEditingController();
+      _ownerController = TextEditingController();
+      _phoneController = TextEditingController();
+    }
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final hasPermission = source == ImageSource.camera 
+        ? await PermissionService.requestCameraPermission()
+        : await PermissionService.requestGalleryPermission();
+        
+    if (hasPermission) {
+      final XFile? pickedFile = await _picker.pickImage(source: source);
+      if (pickedFile != null) {
+        setState(() => _imageFile = File(pickedFile.path));
+      }
+    }
+  }
+
+  void _showImageSourceActionSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Photo Library'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera),
+              title: const Text('Camera'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -51,6 +106,36 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
+            // Shop Image
+            GestureDetector(
+              onTap: () => _showImageSourceActionSheet(context),
+              child: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 60,
+                    backgroundColor: Colors.grey.shade100,
+                    backgroundImage: _imageFile != null 
+                        ? FileImage(_imageFile!) 
+                        : (Provider.of<AppProvider>(context).shopDetails?.shopImageUrl.isNotEmpty ?? false)
+                            ? NetworkImage(Provider.of<AppProvider>(context).shopDetails!.shopImageUrl) as ImageProvider
+                            : null,
+                    child: _imageFile == null && !(Provider.of<AppProvider>(context).shopDetails?.shopImageUrl.isNotEmpty ?? false)
+                        ? Icon(Icons.storefront, size: 40, color: Colors.grey.shade400)
+                        : null,
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(color: AppTheme.shopkeeperPrimary, shape: BoxShape.circle),
+                      child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
             _buildField('Shop Name', _nameController, Icons.storefront),
             _buildField('Shop Location', _locationController, Icons.location_on_outlined),
             _buildField('About Shop', _aboutController, Icons.info_outline, maxLines: 3),
@@ -72,15 +157,24 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                   ],
                 ),
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     final provider = Provider.of<AppProvider>(context, listen: false);
-                    provider.updateShopDetails(ShopDetails(
+                    String? imageUrl = provider.shopDetails?.shopImageUrl ?? '';
+
+                    if (_imageFile != null) {
+                      final uploadedUrl = await provider.uploadImage(_imageFile!.path);
+                      if (uploadedUrl != null) {
+                        imageUrl = uploadedUrl;
+                      }
+                    }
+
+                    await provider.updateShopDetails(ShopDetails(
                       shopName: _nameController.text,
                       shopLocation: _locationController.text,
                       aboutShop: _aboutController.text,
                       ownerName: _ownerController.text,
                       phone: _phoneController.text,
-                      shopImageUrl: provider.shopDetails.shopImageUrl,
+                      shopImageUrl: imageUrl,
                     ));
                     widget.onSaved();
                   },

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../services/permission_service.dart';
 
 class NearbyPage extends StatefulWidget {
   const NearbyPage({super.key});
@@ -14,7 +15,17 @@ class _NearbyPageState extends State<NearbyPage> {
   @override
   void initState() {
     super.initState();
-    // Initial fetch happens in AppProvider.fetchData
+    _requestPermission();
+  }
+
+  Future<void> _requestPermission() async {
+    final granted = await PermissionService.requestLocationPermission();
+    if (granted && mounted) {
+      final pos = await PermissionService.getCurrentLocation();
+      if (pos != null && mounted) {
+        Provider.of<AppProvider>(context, listen: false).fetchNearbyShops(pos.latitude, pos.longitude);
+      }
+    }
   }
 
   @override

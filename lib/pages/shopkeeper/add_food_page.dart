@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../models/food.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import '../../services/permission_service.dart';
 
 class AddFoodPage extends StatefulWidget {
   final VoidCallback onBack;
@@ -27,6 +30,8 @@ class _AddFoodPageState extends State<AddFoodPage> {
   late TextEditingController _ingController;
   String _selectedCategory = "Rice Item";
   String _selectedEmoji = "🍚";
+  File? _imageFile;
+  final ImagePicker _picker = ImagePicker();
 
   final List<Map<String, String>> _categories = [
     {"name": "Rice Item", "emoji": "🍚"},
@@ -48,6 +53,48 @@ class _AddFoodPageState extends State<AddFoodPage> {
       _selectedCategory = widget.editingFood!.category;
       _selectedEmoji = widget.editingFood!.image;
     }
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final hasPermission = source == ImageSource.camera 
+        ? await PermissionService.requestCameraPermission()
+        : await PermissionService.requestGalleryPermission();
+        
+    if (hasPermission) {
+      final XFile? pickedFile = await _picker.pickImage(source: source);
+      if (pickedFile != null) {
+        setState(() => _imageFile = File(pickedFile.path));
+      }
+    }
+  }
+
+  void _showImageSourceActionSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Photo Library'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera),
+              title: const Text('Camera'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -105,6 +152,39 @@ class _AddFoodPageState extends State<AddFoodPage> {
                 },
               ),
             ),
+            // Image Picker Section
+            const Text('Food Image', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textSecondary)),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () => _showImageSourceActionSheet(context),
+              child: Container(
+                height: 160,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.grey.shade200, style: BorderStyle.solid),
+                ),
+                child: _imageFile != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Image.file(_imageFile!, fit: BoxFit.cover),
+                      )
+                    : (widget.editingFood?.image.startsWith('http') ?? false)
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Image.network(widget.editingFood!.image, fit: BoxFit.cover),
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_a_photo_outlined, size: 40, color: Colors.grey.shade400),
+                              const SizedBox(height: 8),
+                              Text('Tap to upload a photo', style: TextStyle(color: Colors.grey.shade400, fontSize: 12)),
+                            ],
+                          ),
+              ),
+            ),
             const SizedBox(height: 24),
 
             _buildField('Food Name', _nameController, Icons.fastfood_outlined, hint: 'e.g., Veg Fried Rice'),
@@ -131,11 +211,26 @@ class _AddFoodPageState extends State<AddFoodPage> {
                   ? const Center(child: CircularProgressIndicator(color: Colors.white))
                   : ElevatedButton(
                       onPressed: () async {
+                        String? imageUrl = widget.editingFood?.image ?? _selectedEmoji;
+                        
+                        if (_imageFile != null) {
+                          final uploadedUrl = await provider.uploadImage(_imageFile!.path);
+                          if (uploadedUrl != null) {
+                            imageUrl = uploadedUrl;
+                          } else {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Failed to upload image. Using fallback.')),
+                              );
+                            }
+                          }
+                        }
+
                         final foodData = {
                           'name': _nameController.text.trim(),
                           'category': _selectedCategory,
                           'quantity': int.tryParse(_qtyController.text) ?? 0,
-                          'image': _selectedEmoji, // Fallback if no image uploaded
+                          'image': imageUrl,
                           'description': _descController.text.trim(),
                           'ingredients': _ingController.text.trim(),
                         };

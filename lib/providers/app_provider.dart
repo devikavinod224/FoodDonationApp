@@ -4,6 +4,7 @@ import '../models/food_request.dart';
 import '../models/profile_details.dart';
 import '../services/api_service.dart';
 import '../services/socket_service.dart';
+import 'package:geolocator/geolocator.dart';
 
 class AppProvider with ChangeNotifier {
   final ApiService _api = ApiService();
@@ -91,7 +92,21 @@ class AppProvider with ChangeNotifier {
         _requests = data.map((json) => FoodRequest.fromJson(json)).toList();
       }
       await fetchFoods(); // Fetch nearby/all food
-      await fetchNearbyShops(12.9716, 77.5946); // Default location (Can be updated with Geolocator)
+      
+      // Try to get real location, fall back to default if denied
+      Position? position;
+      try {
+        final permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
+          position = await Geolocator.getCurrentPosition();
+        }
+      } catch (e) {
+        print('Location fetch error: $e');
+      }
+
+      final lat = position?.latitude ?? 12.9716;
+      final lng = position?.longitude ?? 77.5946;
+      await fetchNearbyShops(lat, lng);
     } catch (e) {
       print('Fetch Receiver Data Error: $e');
     } finally {
@@ -216,15 +231,45 @@ class AppProvider with ChangeNotifier {
     }
   }
 
+  Future<String?> uploadImage(String filePath) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final res = await _api.uploadImage(filePath);
+      if (res.data['success']) {
+        return res.data['data']['url'];
+      }
+    } catch (e) {
+      print('Upload Image Error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+    return null;
+  }
+
   Future<bool> updateShopDetails(ShopDetails details) async {
     try {
+      Position? position;
+      try {
+        final permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
+          position = await Geolocator.getCurrentPosition();
+        }
+      } catch (e) {
+        print('Shop location fetch error: $e');
+      }
+
+      final lat = position?.latitude ?? 12.9716;
+      final lng = position?.longitude ?? 77.5946;
+
       final res = await _api.updateShop({
         'name': details.shopName,
         'description': details.aboutShop,
         'location': {
           'address': details.shopLocation,
           'type': 'Point',
-          'coordinates': [77.5946, 12.9716] // Placeholder coords, should ideally come from a map picker
+          'coordinates': [lng, lat] // [lng, lat] for GeoJSON
         },
         'imageUrl': details.shopImageUrl,
       });
