@@ -71,28 +71,6 @@ class RequestCard extends StatelessWidget {
                     child: _buildImage(),
                   ),
                 ),
-...
-  Widget _buildImage() {
-    if (request.foodImage.startsWith('http')) {
-      return Image.network(
-        request.foodImage,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => _buildFallback(),
-      );
-    }
-    return _buildFallback();
-  }
-
-  Widget _buildFallback() {
-    return Center(
-      child: Text(
-        request.foodImage.length == 1 || request.foodImage.length == 2 
-          ? request.foodImage 
-          : "🥘",
-        style: const TextStyle(fontSize: 32),
-      ),
-    );
-  }
                 const SizedBox(width: 12),
                 // Info
                 Expanded(
@@ -217,6 +195,28 @@ class RequestCard extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildImage() {
+    if (request.foodImage.startsWith('http')) {
+      return Image.network(
+        request.foodImage,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildFallback(),
+      );
+    }
+    return _buildFallback();
+  }
+
+  Widget _buildFallback() {
+    return Center(
+      child: Text(
+        request.foodImage.length == 1 || request.foodImage.length == 2 
+          ? request.foodImage 
+          : "🥘",
+        style: const TextStyle(fontSize: 32),
       ),
     );
   }

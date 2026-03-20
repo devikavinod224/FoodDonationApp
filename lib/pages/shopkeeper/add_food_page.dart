@@ -99,6 +99,7 @@ class _AddFoodPageState extends State<AddFoodPage> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<AppProvider>(context);
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(

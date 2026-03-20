@@ -44,28 +44,6 @@ class _FoodDetailsPageState extends State<FoodDetailsPage> {
                   child: _buildImage(),
                 ),
               ),
-...
-  Widget _buildImage() {
-    if (widget.food.image.startsWith('http')) {
-      return Image.network(
-        widget.food.image,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => _buildFallback(),
-      );
-    }
-    return _buildFallback();
-  }
-
-  Widget _buildFallback() {
-    return Center(
-      child: Text(
-        widget.food.image.length == 1 || widget.food.image.length == 2 
-          ? widget.food.image 
-          : "🥘",
-        style: const TextStyle(fontSize: 120),
-      ),
-    );
-  }
               Positioned(
                 top: 50,
                 left: 20,
@@ -210,6 +188,28 @@ class _FoodDetailsPageState extends State<FoodDetailsPage> {
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(icon, color: AppTheme.textPrimary, size: 20),
+      ),
+    );
+  }
+
+  Widget _buildImage() {
+    if (widget.food.image.startsWith('http')) {
+      return Image.network(
+        widget.food.image,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildFallback(),
+      );
+    }
+    return _buildFallback();
+  }
+
+  Widget _buildFallback() {
+    return Center(
+      child: Text(
+        widget.food.image.length == 1 || widget.food.image.length == 2 
+          ? widget.food.image 
+          : "🥘",
+        style: const TextStyle(fontSize: 120),
       ),
     );
   }

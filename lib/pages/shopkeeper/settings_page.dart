@@ -36,17 +36,17 @@ class SettingsPage extends StatelessWidget {
                   radius: 40,
                   backgroundColor: AppTheme.shopkeeperPrimary.withOpacity(0.1),
                   child: Text(
-                    profile.name.isNotEmpty ? profile.name[0].toUpperCase() : 'S',
+                    (profile?.name ?? "").isNotEmpty ? profile!.name[0].toUpperCase() : 'S',
                     style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.shopkeeperPrimary),
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  profile.name,
+                  profile?.name ?? 'Shopkeeper',
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                 ),
                 Text(
-                  '@${profile.username}',
+                  '@${profile?.username ?? "username"}',
                   style: const TextStyle(fontSize: 12, color: AppTheme.textLight),
                 ),
               ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../models/food_request.dart';
 
 class ReceiverProfilePage extends StatelessWidget {
   final VoidCallback onLogout;
@@ -35,17 +36,17 @@ class ReceiverProfilePage extends StatelessWidget {
                   radius: 50,
                   backgroundColor: Colors.white.withOpacity(0.2),
                   child: Text(
-                    profile.name.isNotEmpty ? profile.name[0].toUpperCase() : 'R',
+                    (profile?.name ?? "").isNotEmpty ? profile!.name[0].toUpperCase() : 'R',
                     style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  profile.name,
+                  profile?.name ?? "Receiver",
                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 Text(
-                  '@${profile.username}',
+                  '@${profile?.username ?? "username"}',
                   style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.7)),
                 ),
               ],

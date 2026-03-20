@@ -28,7 +28,7 @@ class ApiService {
     return _dio.post('/auth/login', data: {'email': email, 'password': password});
   }
 
-  Future<Response> register(Map<String, dynamic> userData) async {
+  Future<Response> signup(Map<String, dynamic> userData) async {
     return _dio.post('/auth/register', data: userData);
   }
 

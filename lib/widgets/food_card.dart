@@ -47,26 +47,6 @@ class FoodCard extends StatelessWidget {
                 child: _buildImage(),
               ),
             ),
-...
-  Widget _buildImage() {
-    if (food.image.startsWith('http')) {
-      return Image.network(
-        food.image,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => _buildFallback(),
-      );
-    }
-    return _buildFallback();
-  }
-
-  Widget _buildFallback() {
-    return Center(
-      child: Text(
-        food.image.length == 1 || food.image.length == 2 ? food.image : "🍽️",
-        style: const TextStyle(fontSize: 40),
-      ),
-    );
-  }
             // Info Area
             Padding(
               padding: const EdgeInsets.all(12),
@@ -128,6 +108,26 @@ class FoodCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildImage() {
+    if (food.image.startsWith('http')) {
+      return Image.network(
+        food.image,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildFallback(),
+      );
+    }
+    return _buildFallback();
+  }
+
+  Widget _buildFallback() {
+    return Center(
+      child: Text(
+        food.image.length == 1 || food.image.length == 2 ? food.image : "🍽️",
+        style: const TextStyle(fontSize: 40),
       ),
     );
   }

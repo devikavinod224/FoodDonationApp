@@ -53,7 +53,6 @@ class _ReceiverHomePageState extends State<ReceiverHomePage> {
 
     final allFoods = provider.foods;
     final categories = ["All", ...provider.getCategories()];
-...
     final filteredFoods = allFoods.where((f) {
       final matchesSearch = f.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           f.category.toLowerCase().contains(_searchQuery.toLowerCase());
