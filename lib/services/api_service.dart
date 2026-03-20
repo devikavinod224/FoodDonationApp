@@ -10,6 +10,8 @@ class ApiService {
     receiveTimeout: const Duration(seconds: 10),
   ));
 
+  Dio get dio => _dio;
+
   ApiService() {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
@@ -30,6 +32,10 @@ class ApiService {
 
   Future<Response> signup(Map<String, dynamic> userData) async {
     return _dio.post('/auth/register', data: userData);
+  }
+
+  Future<Response> getFoodsByShop(String shopId) async {
+    return _dio.get('/foods/shop/$shopId');
   }
 
   // Foods

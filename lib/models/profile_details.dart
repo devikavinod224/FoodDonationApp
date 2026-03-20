@@ -81,6 +81,7 @@ class ReceiverProfile {
 }
 
 class ShopDetails {
+  final String id;
   final String shopName;
   final String shopLocation;
   final String aboutShop;
@@ -88,8 +89,11 @@ class ShopDetails {
   final String phone;
   final String shopImageUrl;
   final String? distance;
+  final double lat;
+  final double lng;
 
   ShopDetails({
+    required this.id,
     required this.shopName,
     required this.shopLocation,
     required this.aboutShop,
@@ -97,36 +101,23 @@ class ShopDetails {
     required this.phone,
     required this.shopImageUrl,
     this.distance,
+    required this.lat,
+    required this.lng,
   });
 
-  ShopDetails copyWith({
-    String? shopName,
-    String? shopLocation,
-    String? aboutShop,
-    String? ownerName,
-    String? phone,
-    String? shopImageUrl,
-  }) {
-    return ShopDetails(
-      shopName: shopName ?? this.shopName,
-      shopLocation: shopLocation ?? this.shopLocation,
-      aboutShop: aboutShop ?? this.aboutShop,
-      ownerName: ownerName ?? this.ownerName,
-      phone: phone ?? this.phone,
-      shopImageUrl: shopImageUrl ?? this.shopImageUrl,
-      distance: distance ?? this.distance,
-    );
-  }
-
   factory ShopDetails.fromJson(Map<String, dynamic> json) {
+    final location = json['location'] ?? {};
     return ShopDetails(
+      id: json['_id'] ?? json['id'] ?? '',
       shopName: json['name'] ?? '',
-      shopLocation: json['location']?['address'] ?? '',
+      shopLocation: location['address'] ?? '',
       aboutShop: json['description'] ?? '',
-      ownerName: '', // Handled by profile
+      ownerName: '', // Handled by profile if needed
       phone: '', 
       shopImageUrl: json['imageUrl'] ?? '',
       distance: json['distance'] != null ? '${(json['distance'] / 1000).toStringAsFixed(1)} km' : null,
+      lat: (location['lat'] ?? 0).toDouble(),
+      lng: (location['lng'] ?? 0).toDouble(),
     );
   }
 }

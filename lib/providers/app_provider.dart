@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/food.dart';
 import '../models/food_request.dart';
@@ -10,6 +11,8 @@ import 'package:geolocator/geolocator.dart';
 class AppProvider with ChangeNotifier {
   final ApiService _api = ApiService();
   final SocketService _socket = SocketService();
+
+  ApiService get api => _api;
   
   List<Food> _foods = [];
   List<FoodRequest> _requests = [];
@@ -18,6 +21,8 @@ class AppProvider with ChangeNotifier {
   ReceiverProfile? _receiverProfile;
   ShopDetails? _shopDetails;
   List<ShopDetails> _nearbyShops = [];
+  List<Food> _shopFoods = [];
+  Map<String, int> _cart = {}; // foodId -> qty
   
   bool _isLoading = false;
 
@@ -31,6 +36,9 @@ class AppProvider with ChangeNotifier {
   ReceiverProfile? get receiverProfile => _receiverProfile;
   ShopDetails? get shopDetails => _shopDetails;
   List<ShopDetails> get nearbyShops => _nearbyShops;
+  List<Food> get shopFoods => _shopFoods;
+  Map<String, int> get cart => _cart;
+  int get cartCount => _cart.values.fold(0, (sum, q) => sum + q);
   bool get isLoading => _isLoading;
 
   List<String> getCategories({String? shopId}) {
@@ -150,6 +158,67 @@ class AppProvider with ChangeNotifier {
       }
     } catch (e) {
       print('Fetch Nearby Shops Error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchFoodsByShop(String shopId) async {
+    _isLoading = true;
+    _shopFoods = [];
+    notifyListeners();
+    try {
+      final res = await _api.getFoodsByShop(shopId);
+      if (res.data['success']) {
+        final List data = res.data['data'];
+        _shopFoods = data.map((json) => Food.fromJson(json)).toList();
+      }
+    } catch (e) {
+      print('Fetch Shop Foods Error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Cart Management
+  void addToCart(String foodId) {
+    _cart[foodId] = (_cart[foodId] ?? 0) + 1;
+    notifyListeners();
+  }
+
+  void removeFromCart(String foodId) {
+    if (_cart.containsKey(foodId)) {
+      if (_cart[foodId]! > 1) {
+        _cart[foodId] = _cart[foodId]! - 1;
+      } else {
+        _cart.remove(foodId);
+      }
+      notifyListeners();
+    }
+  }
+
+  void clearCart() {
+    _cart.clear();
+    notifyListeners();
+  }
+
+  Future<bool> sendCartRequest(String shopId) async {
+    if (_cart.isEmpty) return false;
+    _isLoading = true;
+    notifyListeners();
+    try {
+      // For now, send individual requests for each cart item
+      // In a real app, you might want a batch endpoint
+      for (var entry in _cart.entries) {
+        await _api.createRequest(entry.key, entry.value);
+      }
+      clearCart();
+      return true;
+    } catch (e) {
+      print('Send Cart Request Error: $e');
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -292,18 +361,32 @@ class AppProvider with ChangeNotifier {
     try {
       final res = await _api.signup(userData);
       if (res.data['success']) {
-        final token = res.data['token'];
+        final data = res.data['data'];
+        final token = data['token'];
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
-        await prefs.setString('user_role', userData['role']);
+        await prefs.setString('user_role', data['role']);
         
-        await fetchData(); // Fetch initial data
+        if (data['role'] == 'shopkeeper') {
+          _shopkeeperProfile = ShopkeeperProfile.fromJson(data['user']);
+          initSocket(_shopkeeperProfile!.id);
+          await fetchShopkeeperData();
+        } else {
+          _receiverProfile = ReceiverProfile.fromJson(data['user']);
+          initSocket(_receiverProfile!.id);
+          await fetchReceiverData();
+        }
+        
         _isLoading = false;
         notifyListeners();
         return true;
       }
     } catch (e) {
-      print('Signup Error: $e');
+      if (e is DioException && e.response != null) {
+        print('Signup Error: ${e.response?.data['message'] ?? e.message}');
+      } else {
+        print('Signup Error: $e');
+      }
     }
     _isLoading = false;
     notifyListeners();
@@ -340,7 +423,11 @@ class AppProvider with ChangeNotifier {
         return true;
       }
     } catch (e) {
-      print('Login Error: $e');
+      if (e is DioException && e.response != null) {
+        print('Login Error: ${e.response?.data['message'] ?? e.message}');
+      } else {
+        print('Login Error: $e');
+      }
     }
     return false;
   }

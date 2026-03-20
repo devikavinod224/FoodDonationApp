@@ -169,12 +169,15 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                     }
 
                     await provider.updateShopDetails(ShopDetails(
+                      id: provider.shopDetails?.id ?? '',
                       shopName: _nameController.text,
                       shopLocation: _locationController.text,
                       aboutShop: _aboutController.text,
                       ownerName: _ownerController.text,
                       phone: _phoneController.text,
                       shopImageUrl: imageUrl,
+                      lat: provider.shopDetails?.lat ?? 0,
+                      lng: provider.shopDetails?.lng ?? 0,
                     ));
                     widget.onSaved();
                   },
