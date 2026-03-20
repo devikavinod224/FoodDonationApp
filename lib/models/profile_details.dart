@@ -87,6 +87,7 @@ class ShopDetails {
   final String ownerName;
   final String phone;
   final String shopImageUrl;
+  final String? distance;
 
   ShopDetails({
     required this.shopName,
@@ -95,6 +96,7 @@ class ShopDetails {
     required this.ownerName,
     required this.phone,
     required this.shopImageUrl,
+    this.distance,
   });
 
   ShopDetails copyWith({
@@ -112,6 +114,7 @@ class ShopDetails {
       ownerName: ownerName ?? this.ownerName,
       phone: phone ?? this.phone,
       shopImageUrl: shopImageUrl ?? this.shopImageUrl,
+      distance: distance ?? this.distance,
     );
   }
 
@@ -123,6 +126,7 @@ class ShopDetails {
       ownerName: '', // Handled by profile
       phone: '', 
       shopImageUrl: json['imageUrl'] ?? '',
+      distance: json['distance'] != null ? '${(json['distance'] / 1000).toStringAsFixed(1)} km' : null,
     );
   }
 }

@@ -15,6 +15,7 @@ class AppProvider with ChangeNotifier {
   ShopkeeperProfile? _shopkeeperProfile;
   ReceiverProfile? _receiverProfile;
   ShopDetails? _shopDetails;
+  List<ShopDetails> _nearbyShops = [];
   
   bool _isLoading = false;
 
@@ -27,6 +28,7 @@ class AppProvider with ChangeNotifier {
   ShopkeeperProfile? get shopkeeperProfile => _shopkeeperProfile;
   ReceiverProfile? get receiverProfile => _receiverProfile;
   ShopDetails? get shopDetails => _shopDetails;
+  List<ShopDetails> get nearbyShops => _nearbyShops;
   bool get isLoading => _isLoading;
 
 
@@ -82,6 +84,7 @@ class AppProvider with ChangeNotifier {
         _requests = data.map((json) => FoodRequest.fromJson(json)).toList();
       }
       await fetchFoods(); // Fetch nearby/all food
+      await fetchNearbyShops(12.9716, 77.5946); // Default location (Can be updated with Geolocator)
     } catch (e) {
       print('Fetch Receiver Data Error: $e');
     } finally {
@@ -111,6 +114,23 @@ class AppProvider with ChangeNotifier {
 
   void disposeSocket() {
     _socket.disconnect();
+  }
+
+  Future<void> fetchNearbyShops(double lat, double lng) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final res = await _api.getNearbyShops(lat, lng);
+      if (res.data['success']) {
+        final List data = res.data['data'];
+        _nearbyShops = data.map((json) => ShopDetails.fromJson(json)).toList();
+      }
+    } catch (e) {
+      print('Fetch Nearby Shops Error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   // CRUD Actions via API
