@@ -57,9 +57,9 @@ class ReceiverProfilePage extends StatelessWidget {
             padding: const EdgeInsets.all(24),
             child: Row(
               children: [
-                _buildStat('Requests', '12', Icons.assignment_outlined),
+                _buildStat('Requests', provider.requests.length.toString(), Icons.assignment_outlined),
                 const SizedBox(width: 16),
-                _buildStat('Collected', '8', Icons.check_circle_outline),
+                _buildStat('Collected', provider.requests.where((r) => r.status == RequestStatus.accepted).length.toString(), Icons.check_circle_outline),
               ],
             ),
           ),

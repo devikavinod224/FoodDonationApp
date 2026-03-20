@@ -26,9 +26,23 @@ class FoodDonationApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Food Donation',
       theme: AppTheme.lightTheme,
-      initialRoute: '/',
+      home: FutureBuilder<String?>(
+        future: Provider.of<AppProvider>(context, listen: false).tryAutoLogin(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          }
+          if (snapshot.hasData) {
+            if (snapshot.data == 'shopkeeper') {
+              return const ShopkeeperDashboardWrapper();
+            } else if (snapshot.data == 'receiver') {
+              return const ReceiverDashboardWrapper();
+            }
+          }
+          return const HomePage();
+        },
+      ),
       routes: {
-        '/': (context) => const HomePage(),
         '/shopkeeper_dashboard': (context) => const ShopkeeperDashboardWrapper(),
         '/receiver_dashboard': (context) => const ReceiverDashboardWrapper(),
       },

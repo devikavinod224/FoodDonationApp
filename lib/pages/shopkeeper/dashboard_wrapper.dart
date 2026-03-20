@@ -129,7 +129,10 @@ class _ShopkeeperDashboardWrapperState extends State<ShopkeeperDashboardWrapper>
       case 3:
         return SettingsPage(
           onShopDetails: () => setState(() => _subPage = SubPage.shopDetails),
-          onLogout: () => Navigator.of(context).pushReplacementNamed('/'), // Assuming / is Home
+          onLogout: () async {
+            await Provider.of<AppProvider>(context, listen: false).logout();
+            if (mounted) Navigator.of(context).pushReplacementNamed('/');
+          },
         );
       default:
         return const ShopkeeperHomePage();

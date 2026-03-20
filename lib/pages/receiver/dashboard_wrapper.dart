@@ -102,7 +102,10 @@ class _ReceiverDashboardWrapperState extends State<ReceiverDashboardWrapper> {
         return const NearbyPage();
       case 3:
         return ReceiverProfilePage(
-          onLogout: () => Navigator.of(context).pushReplacementNamed('/'),
+          onLogout: () async {
+            await Provider.of<AppProvider>(context, listen: false).logout();
+            if (mounted) Navigator.of(context).pushReplacementNamed('/');
+          },
         );
       default:
         return ReceiverHomePage(onFoodSelect: (food) => setState(() => _selectedFood = food));

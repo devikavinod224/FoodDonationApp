@@ -31,6 +31,13 @@ class AppProvider with ChangeNotifier {
   List<ShopDetails> get nearbyShops => _nearbyShops;
   bool get isLoading => _isLoading;
 
+  List<String> getCategories({String? shopId}) {
+    if (shopId != null) {
+      return _foods.where((f) => f.shopId == shopId).map((f) => f.category).toSet().toList();
+    }
+    return _foods.map((f) => f.category).toSet().toList();
+  }
+
 
   // API Methods
   Future<void> fetchFoods({String? category}) async {
@@ -209,6 +216,29 @@ class AppProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> updateShopDetails(ShopDetails details) async {
+    try {
+      final res = await _api.updateShop({
+        'name': details.shopName,
+        'description': details.aboutShop,
+        'location': {
+          'address': details.shopLocation,
+          'type': 'Point',
+          'coordinates': [77.5946, 12.9716] // Placeholder coords, should ideally come from a map picker
+        },
+        'imageUrl': details.shopImageUrl,
+      });
+      if (res.data['success']) {
+        _shopDetails = ShopDetails.fromJson(res.data['data']);
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      print('Update Shop Error: $e');
+    }
+    return false;
+  }
+
   // Auth helper
   Future<bool> signup(Map<String, dynamic> userData) async {
     _isLoading = true;
@@ -267,6 +297,23 @@ class AppProvider with ChangeNotifier {
       print('Login Error: $e');
     }
     return false;
+  }
+
+  Future<String?> tryAutoLogin() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      if (token == null) return null;
+
+      final role = prefs.getString('user_role');
+      if (role != null) {
+        await fetchData();
+        return role;
+      }
+    } catch (e) {
+      print('Auto Login Error: $e');
+    }
+    return null;
   }
 
   Future<void> logout() async {
